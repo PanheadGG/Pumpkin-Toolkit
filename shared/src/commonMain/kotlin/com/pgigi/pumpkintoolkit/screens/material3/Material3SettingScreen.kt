@@ -26,6 +26,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -52,8 +53,14 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.number
 import kotlinx.datetime.toLocalDateTime
+import top.yukonga.miuix.kmp.basic.NumberPicker
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.Back
+import top.yukonga.miuix.kmp.preference.ArrowPreference
+import top.yukonga.miuix.kmp.preference.SwitchPreference
+import top.yukonga.miuix.kmp.theme.LocalDismissState
+import top.yukonga.miuix.kmp.theme.MiuixTheme
+import top.yukonga.miuix.kmp.window.WindowDialog
 import kotlin.math.roundToInt
 import kotlin.time.Clock
 
@@ -66,6 +73,11 @@ fun Material3SettingScreen() {
     val hapticFeedback = LocalHapticFeedback.current
 
     var pickerDialog by remember { mutableStateOf<PickerState?>(null) }
+
+    //明日课程功能变量的申明
+    val showTimeDialog = remember { mutableStateOf(false) }
+    var tempHour by remember { mutableIntStateOf(AppConfig.tomorrowSwitchHour) }
+    var tempMinute by remember { mutableIntStateOf(AppConfig.tomorrowSwitchMinute) }
 
     Scaffold(
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
@@ -421,6 +433,86 @@ fun Material3SettingScreen() {
                         )
                     },
                 )
+            }
+
+            //设置中“时间刻后显示明日课程(可能需要手动刷新)”按钮，决定是否启用明日课程功能；同时，决定是否显示“切换时间”设置项
+            SwitchPreference(
+                title = "时间刻后显示明日课程(可能需要手动刷新)",
+                checked = AppConfig.tomorrowScheduleEnable,
+                onCheckedChange = {
+                    AppConfig.tomorrowScheduleEnable = it
+                    AppConfig.save()
+                }
+            )
+
+
+            //设置中”切换时间“设置项
+            AnimatedVisibility(AppConfig.tomorrowScheduleEnable) {
+                ArrowPreference(
+                    title = "切换时间",
+                    endActions = {
+                        top.yukonga.miuix.kmp.basic.Text(
+                            text = "${AppConfig.tomorrowSwitchHour.toString().padStart(2, '0')}:" +
+                                    "${AppConfig.tomorrowSwitchMinute.toString().padStart(2, '0')}",
+                            modifier = Modifier.align(Alignment.CenterVertically),
+                            fontSize = MiuixTheme.textStyles.body2.fontSize,
+                            color = MiuixTheme.colorScheme.onSurfaceVariantActions,
+                        )
+                    },
+                    onClick = { showTimeDialog.value = AppConfig.tomorrowScheduleEnable }
+                )
+            }
+
+            //用于展示滚轮时间选择器的弹窗时间
+            //点击”切换时间“按钮后，弹出滚轮事件选择弹窗，进行时间的选择
+            WindowDialog(
+                title = "选择切换时间",
+                show = showTimeDialog.value,
+                onDismissRequest = { showTimeDialog.value = false }
+            ) {
+                val dismiss = LocalDismissState.current
+                Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        NumberPicker(
+                            value = tempHour,
+                            onValueChange = { tempHour = it },
+                            range = 0..23,
+                            label = { it.toString().padStart(2, '0') },
+                            wrapAround = true,
+                            modifier = Modifier.weight(1f)
+                        )
+                        top.yukonga.miuix.kmp.basic.Text(":")
+                        NumberPicker(
+                            value = tempMinute,
+                            onValueChange = { tempMinute = it },
+                            range = 0..59,
+                            label = { it.toString().padStart(2, '0') },
+                            wrapAround = true,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                    Row {
+                        top.yukonga.miuix.kmp.basic.TextButton(
+                            text = "取消",
+                            onClick = { dismiss?.invoke() },
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(8.dp)
+                        )
+                        top.yukonga.miuix.kmp.basic.TextButton(
+                            text = "确认",
+                            onClick = {
+                                AppConfig.tomorrowSwitchHour = tempHour
+                                AppConfig.tomorrowSwitchMinute = tempMinute
+                                AppConfig.save()
+                                dismiss?.invoke()
+                            },
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(8.dp)
+                        )
+                    }
+                }
             }
 
             // Score settings
