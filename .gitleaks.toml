@@ -1,0 +1,14 @@
+title = "Pumpkin Toolkit gitleaks config"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "文档占位符与示例文件"
+paths = [
+  '''(^|/)\.env\.example$''',
+  '''(^|/)docs/''',
+]
+regexes = [
+  '''KEYSTORE_PASSWORD=\.\.\.''',
+]
