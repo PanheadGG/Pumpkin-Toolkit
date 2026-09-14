@@ -1,9 +1,12 @@
 package com.pgigi.pumpkintoolkit.screens.miuix.sunshine
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -92,11 +95,12 @@ fun LostAndFoundListScreen(viewModel: LostAndFoundListViewModel = viewModel(fact
 
     suspend fun getList() {
         loading = true
-        client.getLostAndFoundList(pageIndex = viewModel.pageIndex, searchKey = viewModel.searchKey)?.let {
-            viewModel.list.addAll(it.list)
-            if(it.total<=viewModel.list.size) viewModel.listEnded = true
-            viewModel.pageIndex++
-        }
+        client.getLostAndFoundList(pageIndex = viewModel.pageIndex, searchKey = viewModel.searchKey)
+            ?.let {
+                viewModel.list.addAll(it.list)
+                if (it.total <= viewModel.list.size) viewModel.listEnded = true
+                viewModel.pageIndex++
+            }
         loading = false
         isRefreshing = false
     }
@@ -115,7 +119,7 @@ fun LostAndFoundListScreen(viewModel: LostAndFoundListViewModel = viewModel(fact
 
     // 监听到底部状态变化
     LaunchedEffect(isAtBottom) {
-        if (isAtBottom&&!loading&&!viewModel.listEnded) {
+        if (isAtBottom && !loading && !viewModel.listEnded) {
             getList()
         }
     }
@@ -125,11 +129,11 @@ fun LostAndFoundListScreen(viewModel: LostAndFoundListViewModel = viewModel(fact
             SmallTopAppBar(
                 title = "列表",
                 navigationIcon = {
-                     IconButton(onClick = {
-                         navigator.pop()
-                     }) {
-                         Icon(MiuixIcons.Back, contentDescription = "返回")
-                     }
+                    IconButton(onClick = {
+                        navigator.pop()
+                    }) {
+                        Icon(MiuixIcons.Back, contentDescription = "返回")
+                    }
                 },
                 actions = {
                     IconButton(onClick = {
@@ -140,10 +144,11 @@ fun LostAndFoundListScreen(viewModel: LostAndFoundListViewModel = viewModel(fact
                 },
             )
         },
-    ) {paddingValues ->
-        val cardPadding = PaddingValues(12.dp,6.dp)
+    ) { paddingValues ->
+        val cardPadding = PaddingValues(12.dp, 6.dp)
+
         PullToRefresh(
-            modifier = Modifier.padding(paddingValues),
+            modifier = Modifier.fillMaxSize().padding(paddingValues),
             isRefreshing = isRefreshing,
             refreshTexts = Texts.REFRESH_TEXTS,
             onRefresh = {
@@ -158,87 +163,93 @@ fun LostAndFoundListScreen(viewModel: LostAndFoundListViewModel = viewModel(fact
                 }
             },
             pullToRefreshState = pullToRefreshState,
-        ){
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                state = listState
-            ) {
-                item {
-                    SearchBar(
-                        inputField = {
-                            InputField(
-                                query = viewModel.searchKey,
-                                onQueryChange = { viewModel.searchKey = it },
-                                onSearch = { doSearch() },
-                                expanded = expanded,
-                                onExpandedChange = { expanded = it }
-                            )
-                        },
-                        expanded = expanded,
-                        onExpandedChange = { expanded = it }
-                    ) {}
-                }
-                items(viewModel.list.size) {
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(cardPadding),
-                        onClick = {
-                            navigator.push(Route.LostAndFoundDetail(viewModel.list[it]))
-                        }
-                    ) {
-                        BasicComponent {
-                            Text(
-                                text = viewModel.list[it].lostTime.toLocalDateTime().toString()
-                                    .replace("T", " ").replace("Z", ""),
-                                fontSize = 12.sp,
-                                color = MiuixTheme.colorScheme.onSurfaceVariantSummary
-                            )
-                            Text(
-                                text = htmlToAnnotatedString(viewModel.list[it].propertyName),
-                                modifier = Modifier.padding(vertical = 8.dp)
-                            )
-                            Text(
-                                text = "遗失地点: ${viewModel.list[it].lostPlace}",
-                                fontSize = 12.sp,
-                                color = MiuixTheme.colorScheme.onSurfaceVariantSummary
-                            )
-                        }
+        ) {
+            Box(Modifier.fillMaxSize()) {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    state = listState
+                ) {
+                    item {
+                        Spacer(modifier = Modifier.height(64.dp))
                     }
-                }
-                item {
-                    if (loading) {
-                        InfiniteProgressIndicator(
+                    items(viewModel.list.size) {
+                        Card(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(cardPadding)
-                        )
+                                .padding(cardPadding),
+                            onClick = {
+                                navigator.push(Route.LostAndFoundDetail(viewModel.list[it]))
+                            }
+                        ) {
+                            BasicComponent {
+                                Text(
+                                    text = viewModel.list[it].lostTime.toLocalDateTime().toString()
+                                        .replace("T", " ").replace("Z", ""),
+                                    fontSize = 12.sp,
+                                    color = MiuixTheme.colorScheme.onSurfaceVariantSummary
+                                )
+                                Text(
+                                    text = htmlToAnnotatedString(viewModel.list[it].propertyName),
+                                    modifier = Modifier.padding(vertical = 8.dp)
+                                )
+                                Text(
+                                    text = "遗失地点: ${viewModel.list[it].lostPlace}",
+                                    fontSize = 12.sp,
+                                    color = MiuixTheme.colorScheme.onSurfaceVariantSummary
+                                )
+                            }
+                        }
                     }
-                    if (viewModel.listEnded) {
-                        Row(modifier = Modifier.fillMaxWidth()) {
-                            HorizontalDivider(
+                    item {
+                        if (loading) {
+                            InfiniteProgressIndicator(
                                 modifier = Modifier
-                                    .weight(1f)
                                     .fillMaxWidth()
-                                    .align(Alignment.CenterVertically)
+                                    .padding(cardPadding)
                             )
-                            Text(
-                                text = "到底了",
-                                fontSize = 12.sp,
-                                modifier = Modifier
-                                    .align(Alignment.CenterVertically)
-                                    .padding(cardPadding),
-                                color = MiuixTheme.colorScheme.onSurfaceVariantSummary
-                            )
-                            HorizontalDivider(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .fillMaxWidth()
-                                    .align(Alignment.CenterVertically)
-                            )
+                        }
+                        if (viewModel.listEnded) {
+                            Row(modifier = Modifier.fillMaxWidth()) {
+                                HorizontalDivider(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .fillMaxWidth()
+                                        .align(Alignment.CenterVertically)
+                                )
+                                Text(
+                                    text = "到底了",
+                                    fontSize = 12.sp,
+                                    modifier = Modifier
+                                        .align(Alignment.CenterVertically)
+                                        .padding(cardPadding),
+                                    color = MiuixTheme.colorScheme.onSurfaceVariantSummary
+                                )
+                                HorizontalDivider(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .fillMaxWidth()
+                                        .align(Alignment.CenterVertically)
+                                )
+                            }
                         }
                     }
                 }
+                SearchBar(
+                    modifier = Modifier
+                        .align(Alignment.TopCenter)
+                        .padding(cardPadding),
+                    inputField = {
+                        InputField(
+                            query = viewModel.searchKey,
+                            onQueryChange = { viewModel.searchKey = it },
+                            onSearch = { doSearch() },
+                            expanded = expanded,
+                            onExpandedChange = { expanded = it }
+                        )
+                    },
+                    expanded = expanded,
+                    onExpandedChange = { expanded = it }
+                ) {}
             }
         }
     }

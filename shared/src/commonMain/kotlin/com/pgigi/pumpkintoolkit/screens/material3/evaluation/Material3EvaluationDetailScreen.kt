@@ -78,6 +78,8 @@ fun Material3EvaluationDetailScreen(
         loading = false
     }
 
+    var submittedSuccessfully by remember { mutableStateOf(false) }
+
     val submit: () -> Unit = {
         val d = detail
         if (!submitting && !loading && d != null) {
@@ -87,7 +89,7 @@ fun Material3EvaluationDetailScreen(
                 submitting = false
                 resultMessage = msg ?: "网络错误，提交失败"
                 if (msg != null && msg.contains("成功")) {
-                    navigator.setResult("evaluation_refresh", true)
+                    submittedSuccessfully = true
                 }
             }
         }
@@ -210,7 +212,12 @@ fun Material3EvaluationDetailScreen(
             title = { Text("提示") },
             text = { Text(msg) },
             confirmButton = {
-                TextButton(onClick = { resultMessage = null }) {
+                TextButton(onClick = {
+                    resultMessage = null
+                    if (submittedSuccessfully) {
+                        navigator.setResult("evaluation_refresh", true)
+                    }
+                }) {
                     Text("确定")
                 }
             }

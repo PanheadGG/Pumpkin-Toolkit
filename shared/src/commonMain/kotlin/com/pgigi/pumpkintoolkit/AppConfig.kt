@@ -26,10 +26,8 @@ object AppConfig {
     var floatingNavigation by mutableStateOf(false)
     var functionDisplayMode by mutableIntStateOf(0) // 0=列表, 1=平铺
     var enableBlurEffect by mutableStateOf(true)
-    var predictiveBackAnimation by mutableStateOf(PredictiveBackAnimation.AOSP)
+    var predictiveBackAnimation by mutableStateOf(PredictiveBackAnimation.None)
     var predictiveBackExitDirection by mutableStateOf(PredictiveBackExitDirection.FOLLOW_GESTURE)
-    var fontScale by mutableStateOf(1.0f)
-    var autoFontScale by mutableStateOf(true)
 
     // 课表
     var cellHeight by mutableIntStateOf(70)
@@ -62,11 +60,6 @@ object AppConfig {
 
     var lockStartDate by mutableStateOf(false)
 
-    // 明日模式，用于在用户设置的时间点后切换到明日模式。默认为开启状态，切换时间为22:00。
-    var tomorrowScheduleEnable by mutableStateOf(true)             // 是否启用明日模式
-    var tomorrowSwitchHour by mutableIntStateOf(22)         // 明日模式切换的小时
-    var tomorrowSwitchMinute by mutableIntStateOf(0)        // 明日模式切换的分钟
-
     object KEY {
         const val COLOR_MODE = "color_mode"
         const val UI_MODE = "ui_mode"
@@ -89,11 +82,6 @@ object AppConfig {
         const val TERM_FILTER_START = "term_filter_start"
         const val HIDE_FAIL_SCORE = "hide_fail_score"
         const val LOCK_START_DATE = "lock_start_date"
-        const val TOMORROW_SCHEDULE_ENABLE = "tomorrow_schedule_enable"
-        const val TOMORROW_SWITCH_HOUR = "tomorrow_switch_hour"
-        const val TOMORROW_SWITCH_MINUTE = "tomorrow_switch_minute"
-        const val FONT_SCALE = "font_scale"
-        const val AUTO_FONT_SCALE = "auto_font_scale"
     }
 
 
@@ -132,13 +120,6 @@ object AppConfig {
         termFilterStartId = kvault.getString(KEY.TERM_FILTER_START)?:""
         hideFailScore = kvault.getBoolean(KEY.HIDE_FAIL_SCORE)?:false
         lockStartDate = kvault.getBoolean(KEY.LOCK_START_DATE)?:false
-
-        //明日模式新增
-        tomorrowScheduleEnable = kvault.getBoolean(KEY.TOMORROW_SCHEDULE_ENABLE) ?: false
-        tomorrowSwitchHour = kvault.getInt(KEY.TOMORROW_SWITCH_HOUR) ?: 22
-        tomorrowSwitchMinute = kvault.getInt(KEY.TOMORROW_SWITCH_MINUTE) ?: 0
-        fontScale = kvault.getFloat(KEY.FONT_SCALE) ?: 1.0f
-        autoFontScale = kvault.getBoolean(KEY.AUTO_FONT_SCALE) ?: true
     }
 
     fun save(){
@@ -163,14 +144,7 @@ object AppConfig {
         kvault.putString(KEY.TERM_FILTER_START, termFilterStartId)
         kvault.putBoolean(KEY.HIDE_FAIL_SCORE, hideFailScore)
         kvault.putBoolean(KEY.LOCK_START_DATE, lockStartDate)
-        kvault.putFloat(KEY.FONT_SCALE, fontScale)
-        kvault.putBoolean(KEY.AUTO_FONT_SCALE, autoFontScale)
         reloadWidgetTimelines()
-
-        //明日模式
-        kvault.putBoolean(KEY.TOMORROW_SCHEDULE_ENABLE,tomorrowScheduleEnable)       //讲状态存储在储存中。
-        kvault.putInt(KEY.TOMORROW_SWITCH_HOUR,tomorrowSwitchHour)
-        kvault.putInt(KEY.TOMORROW_SWITCH_MINUTE,tomorrowSwitchMinute)
     }
 
     fun updateTermData(map: Map<String, String>) {

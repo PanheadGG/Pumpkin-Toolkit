@@ -39,6 +39,7 @@ import com.pgigi.pumpkintoolkit.LocalNavigator
 import com.pgigi.pumpkintoolkit.Route
 import com.pgigi.pumpkintoolkit.components.material3.SchedulePager
 import com.pgigi.pumpkintoolkit.constants.FileName
+import com.pgigi.pumpkintoolkit.constants.Texts
 import com.pgigi.pumpkintoolkit.models.ScheduleCache
 import com.pgigi.pumpkintoolkit.utils.FileStoreUtils
 import com.pgigi.pumpkintoolkit.utils.JsonUtil
@@ -49,9 +50,10 @@ import com.pgigi.pumpkintoolkit.viewmodel.AppViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import top.yukonga.miuix.kmp.icon.MiuixIcons
-import top.yukonga.miuix.kmp.icon.extended.Refresh
 import top.yukonga.miuix.kmp.icon.extended.Reset
 import top.yukonga.miuix.kmp.icon.extended.Settings
+import top.yukonga.miuix.kmp.basic.PullToRefresh
+import top.yukonga.miuix.kmp.basic.rememberPullToRefreshState
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -67,6 +69,7 @@ fun Material3ScheduleScreen(
     val coroutineScope = rememberCoroutineScope()
     val hapticFeedback = LocalHapticFeedback.current
     var refreshing by remember { mutableStateOf(false) }
+    val pullToRefreshState = rememberPullToRefreshState()
     var initialPage by remember { mutableIntStateOf(0) }
     var pageCount by remember { mutableIntStateOf(0) }
     val windowInfo = LocalWindowInfo.current
@@ -109,49 +112,6 @@ fun Material3ScheduleScreen(
                             Icon(MiuixIcons.Settings, contentDescription = "设置")
                         }
                     }
-                    AnimatedVisibility(loggedIn) {
-                        IconButton(onClick = {
-                            hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
-                            refreshing = true
-                            coroutineScope.launch {
-                                val list = QZClient.getAllCourses()
-                                list?.let {
-                                    viewModel.courseList.clear()
-                                    viewModel.courseList.addAll(list)
-                                    FileStoreUtils.writeString(
-                                        FileName.SCHEDULE,
-                                        JsonUtil.toJson(
-                                            ScheduleCache(
-                                                updateTime = Clock.System.now().toEpochMilliseconds(),
-                                                courses = list
-                                            ),
-                                            ScheduleCache.serializer()
-                                        )
-                                    )
-                                }
-                                val startDate = QZClient.getStartDate()
-                                if (!AppConfig.lockStartDate){
-                                    startDate?.let {
-                                        AppConfig.startDate = startDate
-                                        AppConfig.save()
-                                    }
-                                }
-                                val totalWeek = QZClient.getWeekNum()
-                                totalWeek?.let {
-                                    AppConfig.totalWeek = totalWeek
-                                    AppConfig.save()
-                                }
-                                val map = QZClient.getTermValueMap()
-                                map?.let {
-                                    AppConfig.updateTermData(it)
-                                }
-                                refreshing = false
-                                reloadWidgetTimelines()
-                            }
-                        }) {
-                            Icon(MiuixIcons.Refresh, contentDescription = "刷新")
-                        }
-                    }
                 },
                 navigationIcon = {
                     AnimatedVisibility(
@@ -183,7 +143,50 @@ fun Material3ScheduleScreen(
                     refreshing = false
                 }
             }
-            Box(modifier = Modifier.padding(paddingValues)) {
+            PullToRefresh(
+                isRefreshing = refreshing,
+                onRefresh = {
+                    refreshing = true
+                    coroutineScope.launch {
+                        val list = QZClient.getAllCourses()
+                        list?.let {
+                            viewModel.courseList.clear()
+                            viewModel.courseList.addAll(list)
+                            FileStoreUtils.writeString(
+                                FileName.SCHEDULE,
+                                JsonUtil.toJson(
+                                    ScheduleCache(
+                                        updateTime = Clock.System.now().toEpochMilliseconds(),
+                                        courses = list
+                                    ),
+                                    ScheduleCache.serializer()
+                                )
+                            )
+                        }
+                        val startDate = QZClient.getStartDate()
+                        if (!AppConfig.lockStartDate){
+                            startDate?.let {
+                                AppConfig.startDate = startDate
+                                AppConfig.save()
+                            }
+                        }
+                        val totalWeek = QZClient.getWeekNum()
+                        totalWeek?.let {
+                            AppConfig.totalWeek = totalWeek
+                            AppConfig.save()
+                        }
+                        val map = QZClient.getTermValueMap()
+                        map?.let {
+                            AppConfig.updateTermData(it)
+                        }
+                        refreshing = false
+                        reloadWidgetTimelines()
+                    }
+                },
+                pullToRefreshState = pullToRefreshState,
+                modifier = Modifier.padding(paddingValues),
+                refreshTexts = Texts.REFRESH_TEXTS,
+            ) {
                 SchedulePager(
                     modifier = Modifier.fillMaxSize(),
                     cellHeight = AppConfig.cellHeight.dp,
@@ -192,13 +195,6 @@ fun Material3ScheduleScreen(
                     timeList = AppConfig.timeList,
                     startDate = AppConfig.startDate
                 )
-                if (refreshing) {
-                    CircularProgressIndicator(
-                        modifier = Modifier
-                            .padding(16.dp)
-                            .align(Alignment.TopCenter)
-                    )
-                }
             }
         } else {
             Box(

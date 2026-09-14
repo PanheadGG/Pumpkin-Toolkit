@@ -9,7 +9,7 @@ enum class PredictiveBackAnimation(val displayName: String) {
 
     companion object {
         fun fromName(name: String?): PredictiveBackAnimation =
-            entries.find { it.name == name } ?: AOSP
+            entries.find { it.name == name } ?: None
     }
 }
 

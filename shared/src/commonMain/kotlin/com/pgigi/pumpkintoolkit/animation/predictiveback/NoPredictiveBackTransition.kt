@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 InstallerX Revived contributors
 package com.pgigi.pumpkintoolkit.animation.predictiveback
+import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.ui.graphics.GraphicsLayerScope
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.util.fastRoundToInt
@@ -12,10 +13,31 @@ import top.yukonga.miuix.kmp.nav.transition.NavSettlePhase
 import top.yukonga.miuix.kmp.nav.transition.NavSettleSpec
 import top.yukonga.miuix.kmp.nav.transition.NavTransition
 import top.yukonga.miuix.kmp.nav.transition.NavTransitionScope
-import top.yukonga.miuix.kmp.nav.transition.NavTransitions
 import top.yukonga.miuix.kmp.nav.transition.navDirectionalTransition
 import top.yukonga.miuix.kmp.nav.transition.navGraphicsTransition
 private const val NO_PREDICTIVE_POP_DURATION_MILLIS = 450
+private const val CROSSFADE_DURATION_MILLIS = 200
+private val CrossfadeMotion = NavMotion(
+    commit = NavSettleSpec.Tween(
+        durationMillis = CROSSFADE_DURATION_MILLIS,
+        easing = CubicBezierEasing(0.2f, 0f, 0f, 1f),
+    ),
+    cancel = NavSettleSpec.Tween(
+        durationMillis = CROSSFADE_DURATION_MILLIS,
+        easing = CubicBezierEasing(0.2f, 0f, 0f, 1f),
+    ),
+    programmatic = NavSettleSpec.Tween(
+        durationMillis = CROSSFADE_DURATION_MILLIS,
+        easing = CubicBezierEasing(0.2f, 0f, 0f, 1f),
+    ),
+)
+private val SimpleCrossfade: NavTransition = navGraphicsTransition(
+    opaqueDepth = 1f,
+    motion = CrossfadeMotion,
+    scrim = { 0f },
+) { scope ->
+    alpha = if (scope.relativeDepth <= 0f) topProgress(scope.relativeDepth) else 1f
+}
 private val NoPredictivePop: NavTransition = navGraphicsTransition(
     opaqueDepth = 1f,
     motion = NavMotion(
@@ -33,8 +55,8 @@ private val NoPredictivePop: NavTransition = navGraphicsTransition(
     applyNoPredictiveTransform(scope, noPredictiveVisualProgress(scope))
 }
 internal val NoPredictiveBackTransition: NavTransition = navDirectionalTransition(
-    push = NavTransitions.MiuixDefault,
-    pop = NavTransitions.MiuixDefault,
+    push = SimpleCrossfade,
+    pop = SimpleCrossfade,
     predictivePop = NoPredictivePop,
 )
 private fun noPredictiveVisualProgress(scope: NavTransitionScope): Float {

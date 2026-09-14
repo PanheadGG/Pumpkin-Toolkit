@@ -26,7 +26,6 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -53,14 +52,8 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.number
 import kotlinx.datetime.toLocalDateTime
-import top.yukonga.miuix.kmp.basic.NumberPicker
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.Back
-import top.yukonga.miuix.kmp.preference.ArrowPreference
-import top.yukonga.miuix.kmp.preference.SwitchPreference
-import top.yukonga.miuix.kmp.theme.LocalDismissState
-import top.yukonga.miuix.kmp.theme.MiuixTheme
-import top.yukonga.miuix.kmp.window.WindowDialog
 import kotlin.math.roundToInt
 import kotlin.time.Clock
 
@@ -73,11 +66,6 @@ fun Material3SettingScreen() {
     val hapticFeedback = LocalHapticFeedback.current
 
     var pickerDialog by remember { mutableStateOf<PickerState?>(null) }
-
-    //明日课程功能变量的申明
-    val showTimeDialog = remember { mutableStateOf(false) }
-    var tempHour by remember { mutableIntStateOf(AppConfig.tomorrowSwitchHour) }
-    var tempMinute by remember { mutableIntStateOf(AppConfig.tomorrowSwitchMinute) }
 
     Scaffold(
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
@@ -150,6 +138,7 @@ fun Material3SettingScreen() {
                 )
                 M3Row(
                     title = "悬浮导航栏",
+                    summary = "仅在单栏模式下生效",
                     trailingContent = {
                         Switch(
                             checked = AppConfig.floatingNavigation,
@@ -164,6 +153,25 @@ fun Material3SettingScreen() {
                         AppConfig.save()
                     },
                 )
+                AnimatedVisibility(visible = AppConfig.floatingNavigation){
+                    M3Row(
+                        title = "悬浮导航栏液态玻璃效果",
+                        summary = "Android 需 13+(SDK 33+) 版本才能使用",
+                        trailingContent = {
+                            Switch(
+                                checked = AppConfig.enableBlurEffect,
+                                onCheckedChange = {
+                                    AppConfig.enableBlurEffect = it
+                                    AppConfig.save()
+                                }
+                            )
+                        },
+                        onClick = {
+                            AppConfig.enableBlurEffect = !AppConfig.enableBlurEffect
+                            AppConfig.save()
+                        },
+                    )
+                }
                 val displayModeItems = listOf("列表", "平铺")
                 M3Row(
                     title = "功能列表显示模式",
@@ -180,65 +188,10 @@ fun Material3SettingScreen() {
                         )
                     },
                 )
-                M3Row(
-                    title = "模糊效果",
-                    summary = "Android 需 13+(SDK 33+) 版本才能使用",
-                    trailingContent = {
-                        Switch(
-                            checked = AppConfig.enableBlurEffect,
-                            onCheckedChange = {
-                                AppConfig.enableBlurEffect = it
-                                AppConfig.save()
-                            }
-                        )
-                    },
-                    onClick = {
-                        AppConfig.enableBlurEffect = !AppConfig.enableBlurEffect
-                        AppConfig.save()
-                    },
-                )
-                var fontScale by remember { mutableFloatStateOf(AppConfig.fontScale) }
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = androidx.compose.foundation.layout.Arrangement.SpaceBetween
-                    ) {
-                        Text(
-                            text = "字体大小",
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        Text(
-                            text = "${(fontScale * 100).roundToInt()}%",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                    var lastFontStep by remember { mutableIntStateOf(((fontScale - 0.7f) / 0.05f).roundToInt()) }
-                    Slider(
-                        value = fontScale,
-                        onValueChange = {
-                            fontScale = it
-                            AppConfig.fontScale = it
-                            AppConfig.save()
-                            val currentStep = ((it - 0.7f) / 0.05f).roundToInt()
-                            if (currentStep != lastFontStep) {
-                                hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                                lastFontStep = currentStep
-                            }
-                        },
-                        valueRange = 0.7f..1.3f,
-                        steps = 11,
-                    )
-                }
                 val predictiveBackAnimationItems = PredictiveBackAnimation.entries.map { it.displayName }
                 M3Row(
                     title = "预测返回动画",
-                    summary = "部分设备不支持",
+                    summary = "部分设备不支持，开启将不支持平行视界",
                     trailingContent = { M3TrailingText(AppConfig.predictiveBackAnimation.displayName) },
                     onClick = {
                         pickerDialog = PickerState(
@@ -414,86 +367,6 @@ fun Material3SettingScreen() {
                         )
                     },
                 )
-            }
-
-            //设置中“时间刻后显示明日课程(可能需要手动刷新)”按钮，决定是否启用明日课程功能；同时，决定是否显示“切换时间”设置项
-            SwitchPreference(
-                title = "时间刻后显示明日课程(可能需要手动刷新)",
-                checked = AppConfig.tomorrowScheduleEnable,
-                onCheckedChange = {
-                    AppConfig.tomorrowScheduleEnable = it
-                    AppConfig.save()
-                }
-            )
-
-
-            //设置中”切换时间“设置项
-            AnimatedVisibility(AppConfig.tomorrowScheduleEnable) {
-                ArrowPreference(
-                    title = "切换时间",
-                    endActions = {
-                        top.yukonga.miuix.kmp.basic.Text(
-                            text = "${AppConfig.tomorrowSwitchHour.toString().padStart(2, '0')}:" +
-                                    "${AppConfig.tomorrowSwitchMinute.toString().padStart(2, '0')}",
-                            modifier = Modifier.align(Alignment.CenterVertically),
-                            fontSize = MiuixTheme.textStyles.body2.fontSize,
-                            color = MiuixTheme.colorScheme.onSurfaceVariantActions,
-                        )
-                    },
-                    onClick = { showTimeDialog.value = AppConfig.tomorrowScheduleEnable }
-                )
-            }
-
-            //用于展示滚轮时间选择器的弹窗时间
-            //点击”切换时间“按钮后，弹出滚轮事件选择弹窗，进行时间的选择
-            WindowDialog(
-                title = "选择切换时间",
-                show = showTimeDialog.value,
-                onDismissRequest = { showTimeDialog.value = false }
-            ) {
-                val dismiss = LocalDismissState.current
-                Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        NumberPicker(
-                            value = tempHour,
-                            onValueChange = { tempHour = it },
-                            range = 0..23,
-                            label = { it.toString().padStart(2, '0') },
-                            wrapAround = true,
-                            modifier = Modifier.weight(1f)
-                        )
-                        top.yukonga.miuix.kmp.basic.Text(":")
-                        NumberPicker(
-                            value = tempMinute,
-                            onValueChange = { tempMinute = it },
-                            range = 0..59,
-                            label = { it.toString().padStart(2, '0') },
-                            wrapAround = true,
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
-                    Row {
-                        top.yukonga.miuix.kmp.basic.TextButton(
-                            text = "取消",
-                            onClick = { dismiss?.invoke() },
-                            modifier = Modifier
-                                .weight(1f)
-                                .padding(8.dp)
-                        )
-                        top.yukonga.miuix.kmp.basic.TextButton(
-                            text = "确认",
-                            onClick = {
-                                AppConfig.tomorrowSwitchHour = tempHour
-                                AppConfig.tomorrowSwitchMinute = tempMinute
-                                AppConfig.save()
-                                dismiss?.invoke()
-                            },
-                            modifier = Modifier
-                                .weight(1f)
-                                .padding(8.dp)
-                        )
-                    }
-                }
             }
 
             // Score settings

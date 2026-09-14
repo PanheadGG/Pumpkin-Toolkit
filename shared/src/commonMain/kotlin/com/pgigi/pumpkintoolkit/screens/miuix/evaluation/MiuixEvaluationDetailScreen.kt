@@ -76,6 +76,8 @@ fun MiuixEvaluationDetailScreen(
         loading = false
     }
 
+    var submittedSuccessfully by remember { mutableStateOf(false) }
+
     val submit: () -> Unit = {
         val d = detail
         if (!submitting && !loading && d != null) {
@@ -85,7 +87,7 @@ fun MiuixEvaluationDetailScreen(
                 submitting = false
                 resultMessage = msg ?: "网络错误，提交失败"
                 if (msg != null && msg.contains("成功")) {
-                    navigator.setResult("evaluation_refresh", true)
+                    submittedSuccessfully = true
                 }
             }
         }
@@ -220,7 +222,12 @@ fun MiuixEvaluationDetailScreen(
             TextButton(
                 modifier = Modifier.fillMaxWidth(),
                 text = "确定",
-                onClick = { dismiss?.invoke() }
+                onClick = {
+                    dismiss?.invoke()
+                    if (submittedSuccessfully) {
+                        navigator.setResult("evaluation_refresh", true)
+                    }
+                }
             )
         }
     }
