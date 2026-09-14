@@ -13,8 +13,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -43,7 +43,6 @@ import androidx.compose.ui.unit.sp
 import com.pgigi.pumpkintoolkit.AppConfig
 import com.pgigi.pumpkintoolkit.LocalNavigator
 import com.pgigi.pumpkintoolkit.Route
-import com.pgigi.pumpkintoolkit.components.material3.M3GroupHeader
 import com.pgigi.pumpkintoolkit.components.material3.M3GroupSection
 import com.pgigi.pumpkintoolkit.components.material3.M3Row
 import com.pgigi.pumpkintoolkit.utils.QZClient
@@ -162,7 +161,7 @@ fun Material3FunctionScreen(modifier: Modifier = Modifier) {
                     FunctionGridItem(MiuixIcons.File, "成绩查询") { navigator.push(Route.ExamScore) },
                     FunctionGridItem(MiuixIcons.Location, "空教室查询") { navigator.push(Route.EmptyRoom) },
                     FunctionGridItem(MiuixIcons.Notes, "课程执行计划") { navigator.push(Route.Plan) },
-                    FunctionGridItem(MiuixIcons.VerticalSplit, "其他学期课表") { navigator.push(Route.OtherSchedule) },
+                    FunctionGridItem(MiuixIcons.VerticalSplit, "学期课表") { navigator.push(Route.OtherSchedule) },
                     FunctionGridItem(MiuixIcons.Edit, "学生评教") { navigator.push(Route.EvaluationMenu) },
                     FunctionGridItem(MiuixIcons.Background, "第二课堂成绩单") {
                         navigator.push(Route.WebView("https://m1wxluid.yichafen.com/", "第二课堂成绩单"))
@@ -170,8 +169,8 @@ fun Material3FunctionScreen(modifier: Modifier = Modifier) {
                     FunctionGridItem(MiuixIcons.Backup, "教务系统") {
                         navigator.push(Route.WebView(QZClient.loginRedirectUrl.ifEmpty { AppConfig.serverUrl }, "教务系统"))
                     },
-                    FunctionGridItem(MiuixIcons.File, "线上注册及成绩单") {
-                        navigator.push(Route.WebView("https://ai.usc.edu.cn:9080/gztcyAPP/", "排名成绩单"))
+                    FunctionGridItem(MiuixIcons.File, "绩点排名成绩单") {
+                        navigator.push(Route.WebView("https://ai.usc.edu.cn:9080/gztcyAPP/", "绩点排名成绩单"))
                     },
                     FunctionGridItem(MiuixIcons.Send, "阳光平台") { navigator.push(Route.SunshineMenu) },
                 )
@@ -181,7 +180,7 @@ fun Material3FunctionScreen(modifier: Modifier = Modifier) {
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)
                 ) {
                     BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
-                        val columns = (maxWidth / 90.dp).toInt().coerceIn(1, 6)
+                        val columns = (maxWidth / 130.dp).toInt().coerceIn(1, 6)
                         val spacing = 8.dp
                         Column(
                             modifier = Modifier.padding(12.dp),
@@ -268,11 +267,12 @@ fun Material3FunctionScreen(modifier: Modifier = Modifier) {
                         showDivider = false
                     )
                     M3Row(
-                        title = "线上注册及成绩单",
-                        summary = "与教务系统是两个系统, 可看专业排名成绩单",
+                        title = "绩点排名成绩单",
+//                        summary = "与教务系统是两个系统, 可看专业排名成绩单",
+                        summary = "南华教务公众号 线上注册及成绩单",
                         icon = MiuixIcons.File,
                         onClick = {
-                            navigator.push(Route.WebView("https://ai.usc.edu.cn:9080/gztcyAPP/", "排名成绩单"))
+                            navigator.push(Route.WebView("https://ai.usc.edu.cn:9080/gztcyAPP/", "绩点排名成绩单"))
                         },
                         showDivider = false
                     )
@@ -328,9 +328,8 @@ private fun M3GridItem(
         Spacer(modifier = Modifier.height(6.dp))
         Text(
             text = title,
-            fontSize = 11.sp,
             maxLines = 2,
-            lineHeight = 13.sp,
+            fontSize = 13.sp,
             textAlign = TextAlign.Center,
             overflow = TextOverflow.Ellipsis,
             color = MaterialTheme.colorScheme.onSurface

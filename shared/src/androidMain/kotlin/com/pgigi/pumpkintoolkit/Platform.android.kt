@@ -11,7 +11,7 @@ class AndroidPlatform : Platform {
         val info = context.packageManager.getPackageInfo(context.packageName, 0)
         val verName = info.versionName ?: ""
         val verCode = if (Build.VERSION.SDK_INT >= 28) info.longVersionCode.toString() else info.versionCode.toString()
-        return "$verName($verCode)"
+        return "$verName ($verCode)"
     }
 }
 

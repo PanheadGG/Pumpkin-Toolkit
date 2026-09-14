@@ -9,7 +9,7 @@ class IOSPlatform: Platform {
         get() {
         val verName = NSBundle.mainBundle.infoDictionary?.get("CFBundleShortVersionString") as? String ?: ""
         val verCode = NSBundle.mainBundle.infoDictionary?.get("CFBundleVersion") as? String ?: ""
-        return "$verName($verCode)"
+        return "$verName ($verCode)"
     }
 }
 

@@ -197,62 +197,43 @@ fun Material3SettingScreen() {
                         AppConfig.save()
                     },
                 )
-                M3Row(
-                    title = "自动字体大小",
-                    summary = "根据屏幕尺寸自动调整字体大小",
-                    trailingContent = {
-                        Switch(
-                            checked = AppConfig.autoFontScale,
-                            onCheckedChange = {
-                                AppConfig.autoFontScale = it
-                                AppConfig.save()
-                            }
-                        )
-                    },
-                    onClick = {
-                        AppConfig.autoFontScale = !AppConfig.autoFontScale
-                        AppConfig.save()
-                    },
-                )
-                AnimatedVisibility(!AppConfig.autoFontScale) {
-                    var fontScale by remember { mutableFloatStateOf(AppConfig.fontScale) }
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 8.dp)
+                var fontScale by remember { mutableFloatStateOf(AppConfig.fontScale) }
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = androidx.compose.foundation.layout.Arrangement.SpaceBetween
                     ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = androidx.compose.foundation.layout.Arrangement.SpaceBetween
-                        ) {
-                            Text(
-                                text = "字体大小",
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            Text(
-                                text = "${(fontScale * 100).roundToInt()}%",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                        var lastFontStep by remember { mutableIntStateOf(((fontScale - 0.7f) / 0.05f).roundToInt()) }
-                        Slider(
-                            value = fontScale,
-                            onValueChange = {
-                                fontScale = it
-                                AppConfig.fontScale = it
-                                AppConfig.save()
-                                val currentStep = ((it - 0.7f) / 0.05f).roundToInt()
-                                if (currentStep != lastFontStep) {
-                                    hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                                    lastFontStep = currentStep
-                                }
-                            },
-                            valueRange = 0.7f..1.3f,
-                            steps = 11,
+                        Text(
+                            text = "字体大小",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            text = "${(fontScale * 100).roundToInt()}%",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
+                    var lastFontStep by remember { mutableIntStateOf(((fontScale - 0.7f) / 0.05f).roundToInt()) }
+                    Slider(
+                        value = fontScale,
+                        onValueChange = {
+                            fontScale = it
+                            AppConfig.fontScale = it
+                            AppConfig.save()
+                            val currentStep = ((it - 0.7f) / 0.05f).roundToInt()
+                            if (currentStep != lastFontStep) {
+                                hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                lastFontStep = currentStep
+                            }
+                        },
+                        valueRange = 0.7f..1.3f,
+                        steps = 11,
+                    )
                 }
                 val predictiveBackAnimationItems = PredictiveBackAnimation.entries.map { it.displayName }
                 M3Row(
