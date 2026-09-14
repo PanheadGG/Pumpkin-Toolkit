@@ -153,43 +153,60 @@ fun MiuixSettingScreen() {
                         AppConfig.save()
                     }
                 )
-                SwitchPreference(
-                    title = "自动字体大小",
-                    summary = "根据屏幕尺寸自动调整字体大小",
-                    checked = AppConfig.autoFontScale,
-                    onCheckedChange = {
-                        AppConfig.autoFontScale = it
+                /*
+                var cellHeight by remember{ mutableStateOf(AppConfig.cellHeight.toFloat()) }
+                SliderPreference(
+                    title = "单元格高度",
+                    value = cellHeight,
+                    onValueChange = {
+                        cellHeight = it
+                        AppConfig.cellHeight = it.roundToInt()
                         AppConfig.save()
-                    }
+                    },
+                    valueRange = 50f..100f,
+                    steps = 9,
+                    endActions = {
+                        Text(
+                            text = "$cellHeight dp",
+                            modifier = Modifier
+                                .align(Alignment.CenterVertically)
+                                .weight(1f, fill = false),
+                            fontSize = MiuixTheme.textStyles.body2.fontSize,
+                            color = MiuixTheme.colorScheme.onSurfaceVariantActions,
+                            textAlign = TextAlign.End,
+                        )
+                    },
+                    hapticEffect = SliderDefaults.SliderHapticEffect.Step,
+                    keyPoints = listOf(50f,55f,60f,65f,70f,75f,80f,85f,90f,95f,100f),
+                    showKeyPoints = true
                 )
-                AnimatedVisibility(!AppConfig.autoFontScale){
-                    var fontScale by remember{ mutableStateOf(AppConfig.fontScale) }
-                    SliderPreference(
-                        title = "字体大小",
-                        value = fontScale,
-                        onValueChange = {
-                            fontScale = it
-                            AppConfig.fontScale = it
-                            AppConfig.save()
-                        },
-                        valueRange = 0.7f..1.3f,
-                        steps = 11,
-                        endActions = {
-                            Text(
-                                text = "${(fontScale * 100).roundToInt()}%",
-                                modifier = Modifier
-                                    .align(Alignment.CenterVertically)
-                                    .weight(1f, fill = false),
-                                fontSize = MiuixTheme.textStyles.body2.fontSize,
-                                color = MiuixTheme.colorScheme.onSurfaceVariantActions,
-                                textAlign = TextAlign.End,
-                            )
-                        },
-                        hapticEffect = SliderDefaults.SliderHapticEffect.Step,
-                        keyPoints = listOf(0.7f, 0.75f, 0.8f, 0.85f, 0.9f, 0.95f, 1.0f, 1.05f, 1.1f, 1.15f, 1.2f, 1.25f, 1.3f),
-                        showKeyPoints = true
-                    )
-                }
+                */
+                var fontScale by remember{ mutableStateOf(AppConfig.fontScale) }
+                SliderPreference(
+                    title = "字体大小",
+                    value = fontScale,
+                    onValueChange = {
+                        fontScale = it
+                        AppConfig.fontScale = it
+                        AppConfig.save()
+                    },
+                    valueRange = 0.7f..1.3f,
+                    steps = 11,
+                    endActions = {
+                        Text(
+                            text = "${(fontScale * 100).roundToInt()}%",
+                            modifier = Modifier
+                                .align(Alignment.CenterVertically)
+                                .weight(1f, fill = false),
+                            fontSize = MiuixTheme.textStyles.body2.fontSize,
+                            color = MiuixTheme.colorScheme.onSurfaceVariantActions,
+                            textAlign = TextAlign.End,
+                        )
+                    },
+                    hapticEffect = SliderDefaults.SliderHapticEffect.Step,
+                    keyPoints = listOf(0.7f, 0.75f, 0.8f, 0.85f, 0.9f, 0.95f, 1.0f, 1.05f, 1.1f, 1.15f, 1.2f, 1.25f, 1.3f),
+                    showKeyPoints = true
+                )
                 val predictiveBackAnimationItems = PredictiveBackAnimation.entries.map { it.displayName }
                 WindowDropdownPreference(
                     title = "预测返回动画",
