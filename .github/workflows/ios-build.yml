@@ -49,26 +49,39 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-gradle-
 
-      # ========== 检测 APP_GROUP_ID ==========
-      - name: Check APP_GROUP_ID
-        id: appgroup
+      # ========== 检测 TEAM_ID 并替换 Keychain Access Group ==========
+      - name: Configure Keychain Access Group Team ID
+        id: teamid
         run: |
-          APP_GROUP_ID="${{ vars.APP_GROUP_ID }}"
-          if [ -n "$APP_GROUP_ID" ]; then
-            if [[ "$APP_GROUP_ID" == group.* ]]; then
-              echo "valid=true" >> $GITHUB_OUTPUT
-              echo "app_group_id=$APP_GROUP_ID" >> $GITHUB_OUTPUT
-              echo "✅ APP_GROUP_ID detected and valid: $APP_GROUP_ID"
-            else
-              echo "valid=false" >> $GITHUB_OUTPUT
-              echo "app_group_id=" >> $GITHUB_OUTPUT
-              echo "⚠️  APP_GROUP_ID exists but does not start with 'group.', skipping replacement"
-            fi
+          TEAM_ID="${{ vars.TEAM_ID }}"
+          DEFAULT_TEAM="R6UB6VD355"
+          KEYCHAIN_GROUP="com.pgigi.pumpkintoolkit.keychain.shared"
+
+          FILES=(
+            shared/src/iosMain/kotlin/com/pgigi/pumpkintoolkit/utils/KVaultUtils.ios.kt
+            iosApp/TodayScheduleWidget/KeychainHelper.swift
+          )
+
+          if [ -n "$TEAM_ID" ]; then
+            echo "✅ TEAM_ID provided: $TEAM_ID"
+            echo "Replacing $DEFAULT_TEAM -> $TEAM_ID in source files"
+            for f in "${FILES[@]}"; do
+              sed -i '' "s|$DEFAULT_TEAM\.$KEYCHAIN_GROUP|$TEAM_ID.$KEYCHAIN_GROUP|g" "$f"
+            done
+            echo "team_id=$TEAM_ID" >> $GITHUB_OUTPUT
           else
-            echo "valid=false" >> $GITHUB_OUTPUT
-            echo "app_group_id=" >> $GITHUB_OUTPUT
-            echo "ℹ️  APP_GROUP_ID not set, using default"
+            echo "ℹ️  TEAM_ID not set, removing Team ID prefix from source files"
+            for f in "${FILES[@]}"; do
+              sed -i '' "s|$DEFAULT_TEAM\.$KEYCHAIN_GROUP|$KEYCHAIN_GROUP|g" "$f"
+            done
+            echo "team_id=" >> $GITHUB_OUTPUT
           fi
+
+          echo "=== Verification ==="
+          for f in "${FILES[@]}"; do
+            echo "--- $f ---"
+            grep -n "keychain.shared\|KEYCHAIN_GROUP\|sharedAccessGroup" "$f"
+          done
 
       # ========== 版本读取 ==========
       - name: Read version from libs.versions.toml
@@ -81,7 +94,7 @@ jobs:
           echo "========================================"
           echo "  Version Name : $VER_NAME"
           echo "  Version Code : $VER_CODE"
-          echo "  APP_GROUP_ID : ${{ steps.appgroup.outputs.app_group_id || '(default)' }}"
+          echo "  TEAM_ID      : ${{ vars.TEAM_ID || '(default R6UB6VD355)' }}"
           echo "========================================"
 
       # ========== 同步版本到 Xcode 配置 ==========
@@ -93,56 +106,6 @@ jobs:
           sed -i '' "s/^CURRENT_PROJECT_VERSION=.*/CURRENT_PROJECT_VERSION=$VER_CODE/" "$XCCONFIG"
           sed -i '' "s/^MARKETING_VERSION=.*/MARKETING_VERSION=$VER_NAME/" "$XCCONFIG"
           grep -E '^(CURRENT_PROJECT_VERSION|MARKETING_VERSION)=' "$XCCONFIG"
-
-      # ========== 替换 App Group ID ==========
-      - name: Replace App Group ID in source code
-        if: steps.appgroup.outputs.valid == 'true'
-        env:
-          APP_GROUP_ID: ${{ vars.APP_GROUP_ID }}
-        run: |
-          DEFAULT_ID="group.com.pgigi.pumpkintoolkit"
-          echo "Replacing $DEFAULT_ID with $APP_GROUP_ID in source files"
-
-          # Kotlin side
-          sed -i '' "s|$DEFAULT_ID|$APP_GROUP_ID|g" \
-            shared/src/iosMain/kotlin/com/pgigi/pumpkintoolkit/utils/WidgetDataStore.ios.kt
-
-          # Swift side
-          sed -i '' "s|$DEFAULT_ID|$APP_GROUP_ID|g" \
-            iosApp/TodayScheduleWidget/WidgetHelper.swift
-
-          echo "=== Verification ==="
-          grep -n "APP_GROUP\|appGroup" \
-            shared/src/iosMain/kotlin/com/pgigi/pumpkintoolkit/utils/WidgetDataStore.ios.kt \
-            iosApp/TodayScheduleWidget/WidgetHelper.swift | head -10
-
-      # ========== 添加 App Group ID 到 entitlements ==========
-      - name: Add APP_GROUP_ID to entitlements
-        if: steps.appgroup.outputs.valid == 'true'
-        run: |
-          APP_GROUP_ID="${{ vars.APP_GROUP_ID }}"
-          echo "Adding App Group: $APP_GROUP_ID"
-
-          for ENT_FILE in \
-            iosApp/iosApp/PumpkinToolkit.entitlements \
-            iosApp/TodayScheduleWidget/TodayScheduleWidget.entitlements; do
-
-            echo "Processing $ENT_FILE"
-            python3 -c "
-            import plistlib, sys
-            with open('$ENT_FILE', 'rb') as f:
-                data = plistlib.load(f)
-            groups = data.setdefault('com.apple.security.application-groups', [])
-            gid = '$APP_GROUP_ID'
-            if gid not in groups:
-                groups.append(gid)
-            with open('$ENT_FILE', 'wb') as f:
-                plistlib.dump(data, f)
-            "
-
-            echo "=== $ENT_FILE contents ==="
-            cat "$ENT_FILE"
-          done
 
       # ========== 编译 Kotlin 共享框架 ==========
       - name: Build Kotlin Shared Framework (iosArm64)
@@ -218,5 +181,5 @@ jobs:
       - name: Upload IPA artifact
         uses: actions/upload-artifact@v4
         with:
-          name: PumpkinToolkit-${{ steps.version.outputs.ver_name }}-ios${{ steps.appgroup.outputs.app_group_id != '' && format('-{0}', steps.appgroup.outputs.app_group_id) || '' }}
+          name: PumpkinToolkit-${{ steps.version.outputs.ver_name }}-ios${{ steps.teamid.outputs.team_id != '' && format('-{0}', steps.teamid.outputs.team_id) || '' }}
           path: build/ipa/PumpkinToolkit.ipa

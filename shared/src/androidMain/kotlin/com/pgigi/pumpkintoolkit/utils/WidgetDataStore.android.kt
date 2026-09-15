@@ -20,6 +20,10 @@ actual object WidgetDataStore {
             } catch (_: Exception) { null }
         }
     }
+
+    actual fun clearWidgetData() {
+        FileStoreUtils.writeString(WIDGET_DATA_FILE, "")
+    }
 }
 
 actual fun reloadWidgetTimelines() {
