@@ -13,7 +13,7 @@
 		AA3344556677889900112233 /* TodayScheduleWidgetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB4455667788990011223344 /* TodayScheduleWidgetView.swift */; };
 		AA4455667788990011223344 /* WidgetDataModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB5566778899001122334455 /* WidgetDataModels.swift */; };
 		AA5566778899001122334455 /* WidgetHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB6677889900112233445566 /* WidgetHelper.swift */; };
-		AA6677889900112233445566 /* KeychainHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB7788990011223344556677 /* KeychainHelper.swift */; };
+		AA7788990011223344556677 /* NetworkHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB8899001122334455667788 /* NetworkHelper.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -47,7 +47,7 @@
 		BB4455667788990011223344 /* TodayScheduleWidgetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayScheduleWidgetView.swift; sourceTree = "<group>"; };
 		BB5566778899001122334455 /* WidgetDataModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetDataModels.swift; sourceTree = "<group>"; };
 		BB6677889900112233445566 /* WidgetHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetHelper.swift; sourceTree = "<group>"; };
-		BB7788990011223344556677 /* KeychainHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainHelper.swift; sourceTree = "<group>"; };
+		BB8899001122334455667788 /* NetworkHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkHelper.swift; sourceTree = "<group>"; };
 		F3087EE7E457E26BB9FE080C /* PumpkinToolkit.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PumpkinToolkit.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -122,7 +122,7 @@
 				BB4455667788990011223344 /* TodayScheduleWidgetView.swift */,
 				BB5566778899001122334455 /* WidgetDataModels.swift */,
 				BB6677889900112233445566 /* WidgetHelper.swift */,
-				BB7788990011223344556677 /* KeychainHelper.swift */,
+				BB8899001122334455667788 /* NetworkHelper.swift */,
 			);
 			path = TodayScheduleWidget;
 			sourceTree = "<group>";
@@ -269,7 +269,7 @@
 				AA3344556677889900112233 /* TodayScheduleWidgetView.swift in Sources */,
 				AA4455667788990011223344 /* WidgetDataModels.swift in Sources */,
 				AA5566778899001122334455 /* WidgetHelper.swift in Sources */,
-				AA6677889900112233445566 /* KeychainHelper.swift in Sources */,
+				AA7788990011223344556677 /* NetworkHelper.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

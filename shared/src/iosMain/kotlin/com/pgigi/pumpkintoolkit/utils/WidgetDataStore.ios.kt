@@ -1,35 +1,57 @@
 package com.pgigi.pumpkintoolkit.utils
 
 import com.pgigi.pumpkintoolkit.models.WidgetData
+import io.ktor.client.HttpClient
+import io.ktor.client.request.post
+import io.ktor.client.request.setBody
+import io.ktor.http.ContentType
+import io.ktor.http.contentType
+import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import platform.Foundation.NSNotificationCenter
+import platform.UIKit.UIDevice
 
 const val WIDGET_DATA_CHANGED_NOTIFICATION = "com.pgigi.pumpkintoolkit.widgetDataChanged"
 
-/**
- * Keychain 中存储 widget 课表数据的 key
- * 需与小组件 Swift 端的 KeychainHelper.widgetDataKey 保持一致
- */
-private const val KEYCHAIN_WIDGET_DATA_KEY = "widget_schedule_data"
+private const val API_BASE_URL = "https://pumpkin-api.pgigi.com"
 
 actual object WidgetDataStore {
 
+    private fun idfv(): String {
+        return UIDevice.currentDevice.identifierForVendor?.UUIDString ?: ""
+    }
+
     actual fun save(data: WidgetData) {
         val json = JsonUtil.toJson(data, WidgetData.serializer())
-        createWidgetKVault().set(KEYCHAIN_WIDGET_DATA_KEY, json)
+        val deviceId = idfv()
+        if (deviceId.isEmpty()) return
+
+        // 云端 KV 存储（异步，不阻塞主流程）
+        @OptIn(DelicateCoroutinesApi::class)
+        GlobalScope.launch {
+            try {
+                val client = HttpClient()
+                client.post("$API_BASE_URL/put/$deviceId") {
+                    contentType(ContentType.Application.Json)
+                    setBody(json)
+                }
+                client.close()
+            } catch (_: Exception) { }
+        }
     }
 
     actual fun load(): WidgetData? {
-        val json = createWidgetKVault().string(forKey = KEYCHAIN_WIDGET_DATA_KEY) ?: return null
-        return try {
-            JsonUtil.parseJson(json, WidgetData.serializer())
-        } catch (_: Exception) { null }
+        // iOS 端不本地缓存，小组件自行从云端获取
+        return null
     }
 
     /**
-     * 清除 Keychain 中的小组件课表数据（调试用）
+     * 清除小组件课表数据（调试用）
+     * 云端数据无法直接删除
      */
     actual fun clearWidgetData() {
-        createWidgetKVault().deleteObject(forKey = KEYCHAIN_WIDGET_DATA_KEY)
+        // 无本地数据可清
     }
 }
 

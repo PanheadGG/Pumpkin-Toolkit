@@ -59,6 +59,7 @@ object AppConfig {
     var hideFailScore by mutableStateOf(false)
 
     var lockStartDate by mutableStateOf(false)
+    var disableWidgetUpload by mutableStateOf(false)
 
     object KEY {
         const val COLOR_MODE = "color_mode"
@@ -82,6 +83,7 @@ object AppConfig {
         const val TERM_FILTER_START = "term_filter_start"
         const val HIDE_FAIL_SCORE = "hide_fail_score"
         const val LOCK_START_DATE = "lock_start_date"
+        const val DISABLE_WIDGET_UPLOAD = "disable_widget_upload"
     }
 
 
@@ -120,6 +122,7 @@ object AppConfig {
         termFilterStartId = kvault.getString(KEY.TERM_FILTER_START)?:""
         hideFailScore = kvault.getBoolean(KEY.HIDE_FAIL_SCORE)?:false
         lockStartDate = kvault.getBoolean(KEY.LOCK_START_DATE)?:false
+        disableWidgetUpload = kvault.getBoolean(KEY.DISABLE_WIDGET_UPLOAD)?:false
     }
 
     fun save(){
@@ -144,6 +147,7 @@ object AppConfig {
         kvault.putString(KEY.TERM_FILTER_START, termFilterStartId)
         kvault.putBoolean(KEY.HIDE_FAIL_SCORE, hideFailScore)
         kvault.putBoolean(KEY.LOCK_START_DATE, lockStartDate)
+        kvault.putBoolean(KEY.DISABLE_WIDGET_UPLOAD, disableWidgetUpload)
         reloadWidgetTimelines()
     }
 

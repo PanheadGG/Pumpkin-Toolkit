@@ -92,12 +92,14 @@ fun App(
             val weekCalculator = WeekCalculator(AppConfig.startDate!!,1)
             viewModel.currentWeek = weekCalculator.getWeekNumber(AppConfig.localDate).toInt()
         }
-        WidgetDataStore.save(WidgetDataHelper.buildWidgetData(
-            viewModel.courseList.toList(),
-            AppConfig.startDate,
-            AppConfig.totalWeek,
-            AppConfig.timeSeason
-        ))
+        if (!AppConfig.disableWidgetUpload) {
+            WidgetDataStore.save(WidgetDataHelper.buildWidgetData(
+                viewModel.courseList.toList(),
+                AppConfig.startDate,
+                AppConfig.totalWeek,
+                AppConfig.timeSeason
+            ))
+        }
         reloadWidgetTimelines()
     }
 
@@ -108,12 +110,14 @@ fun App(
                 val cache = JsonUtil.parseJson(it, ScheduleCache.serializer())
                 viewModel.courseList.clear()
                 viewModel.courseList.addAll(cache.courses)
-                WidgetDataStore.save(WidgetDataHelper.buildWidgetData(
-                    viewModel.courseList.toList(),
-                    AppConfig.startDate,
-                    AppConfig.totalWeek,
-                    AppConfig.timeSeason
-                ))
+                if (!AppConfig.disableWidgetUpload) {
+                    WidgetDataStore.save(WidgetDataHelper.buildWidgetData(
+                        viewModel.courseList.toList(),
+                        AppConfig.startDate,
+                        AppConfig.totalWeek,
+                        AppConfig.timeSeason
+                    ))
+                }
                 reloadWidgetTimelines()
             } catch (_: Exception) { }
         }
@@ -157,12 +161,14 @@ fun App(
                 AppConfig.defaultTermId = defaultTermId
                 AppConfig.save()
             }
-            WidgetDataStore.save(WidgetDataHelper.buildWidgetData(
-                viewModel.courseList.toList(),
-                AppConfig.startDate,
-                AppConfig.totalWeek,
-                AppConfig.timeSeason
-            ))
+            if (!AppConfig.disableWidgetUpload) {
+                WidgetDataStore.save(WidgetDataHelper.buildWidgetData(
+                    viewModel.courseList.toList(),
+                    AppConfig.startDate,
+                    AppConfig.totalWeek,
+                    AppConfig.timeSeason
+                ))
+            }
             reloadWidgetTimelines()
         }
     }

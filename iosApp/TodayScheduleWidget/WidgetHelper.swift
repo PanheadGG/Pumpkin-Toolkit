@@ -4,9 +4,9 @@ enum WidgetHelper {
 
     static let dayOfWeekText = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"]
 
-    /// 从 Keychain 读取小组件课表数据
+    /// 从云端获取小组件课表数据
     static func loadWidgetData() -> WidgetData? {
-        return KeychainHelper.loadWidgetData()
+        return NetworkHelper.loadWidgetData()
     }
 
     static func getWeekNumber(startDateStr: String?, date: Date) -> Int {

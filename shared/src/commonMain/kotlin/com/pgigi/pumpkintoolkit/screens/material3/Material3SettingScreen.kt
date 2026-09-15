@@ -48,8 +48,6 @@ import com.pgigi.pumpkintoolkit.components.rememberNumberDatePickerState
 import com.pgigi.pumpkintoolkit.constants.TimeList
 import com.pgigi.pumpkintoolkit.getPlatform
 import com.pgigi.pumpkintoolkit.utils.WeekCalculator
-import com.pgigi.pumpkintoolkit.utils.WidgetDataStore
-import com.pgigi.pumpkintoolkit.utils.reloadWidgetTimelines
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.number
@@ -371,6 +369,29 @@ fun Material3SettingScreen() {
                 )
             }
 
+            // Widget settings
+            /*M3GroupHeader("小组件")
+            M3GroupSection {
+                M3Row(
+                    title = "不上传课表",
+                    summary = "关闭后iOS用户可能无法正常使用小组件",
+                    trailingContent = {
+                        Switch(
+                            checked = AppConfig.disableWidgetUpload,
+                            onCheckedChange = {
+                                AppConfig.disableWidgetUpload = it
+                                AppConfig.save()
+                            }
+                        )
+                    },
+                    onClick = {
+                        AppConfig.disableWidgetUpload = !AppConfig.disableWidgetUpload
+                        AppConfig.save()
+                    },
+                    showDivider = false
+                )
+            }*/
+
             // Score settings
             M3GroupHeader("成绩查询")
             M3GroupSection {
@@ -477,10 +498,10 @@ fun Material3SettingScreen() {
             }
 
             // Debug
-            M3GroupHeader("调试")
+            /*M3GroupHeader("调试")
             M3GroupSection {
                 M3Row(
-                    title = "清除应用及 Keychain 数据",
+                    title = "清除应用数据",
                     summary = "清除所有配置、登录信息和小组件课表缓存",
                     onClick = {
                         AppConfig.kvault.clear()
@@ -489,7 +510,7 @@ fun Material3SettingScreen() {
                     },
                     showDivider = false
                 )
-            }
+            }*/
 
             M3SectionSpacer()
         }

@@ -32,8 +32,6 @@ import com.pgigi.pumpkintoolkit.components.rememberNumberDatePickerState
 import com.pgigi.pumpkintoolkit.constants.TimeList
 import com.pgigi.pumpkintoolkit.getPlatform
 import com.pgigi.pumpkintoolkit.utils.WeekCalculator
-import com.pgigi.pumpkintoolkit.utils.WidgetDataStore
-import com.pgigi.pumpkintoolkit.utils.reloadWidgetTimelines
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atStartOfDayIn
@@ -307,6 +305,18 @@ fun MiuixSettingScreen() {
                 )
             }
 
+            /*SmallTitle("小组件")
+            Card(modifier = Modifier.padding(cardPadding)) {
+                SwitchPreference(title = "不上传课表",
+                    summary = "关闭后iOS用户可能无法正常使用小组件",
+                    checked = AppConfig.disableWidgetUpload,
+                    onCheckedChange = {
+                        AppConfig.disableWidgetUpload = it
+                        AppConfig.save()
+                    }
+                )
+            }*/
+
             SmallTitle("成绩查询")
             Card(modifier = Modifier.padding(cardPadding)) {
                 SwitchPreference(title = "隐藏不及格成绩",
@@ -419,10 +429,10 @@ fun MiuixSettingScreen() {
                 )
             }
 
-            SmallTitle("调试")
+            /*SmallTitle("调试")
             Card(modifier = Modifier.padding(cardPadding)) {
                 ArrowPreference(
-                    title = "清除应用及 Keychain 数据",
+                    title = "清除应用数据",
                     summary = "清除所有配置、登录信息和小组件课表缓存",
                     onClick = {
                         AppConfig.kvault.clear()
@@ -430,7 +440,7 @@ fun MiuixSettingScreen() {
                         reloadWidgetTimelines()
                     }
                 )
-            }
+            }*/
 
             Spacer(modifier = Modifier.height(64.dp))
         }

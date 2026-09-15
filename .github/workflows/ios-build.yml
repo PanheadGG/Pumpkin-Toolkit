@@ -49,40 +49,6 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-gradle-
 
-      # ========== 检测 TEAM_ID 并替换 Keychain Access Group ==========
-      - name: Configure Keychain Access Group Team ID
-        id: teamid
-        run: |
-          TEAM_ID="${{ vars.TEAM_ID }}"
-          DEFAULT_TEAM="R6UB6VD355"
-          KEYCHAIN_GROUP="com.pgigi.pumpkintoolkit.keychain.shared"
-
-          FILES=(
-            shared/src/iosMain/kotlin/com/pgigi/pumpkintoolkit/utils/KVaultUtils.ios.kt
-            iosApp/TodayScheduleWidget/KeychainHelper.swift
-          )
-
-          if [ -n "$TEAM_ID" ]; then
-            echo "✅ TEAM_ID provided: $TEAM_ID"
-            echo "Replacing $DEFAULT_TEAM -> $TEAM_ID in source files"
-            for f in "${FILES[@]}"; do
-              sed -i '' "s|$DEFAULT_TEAM\.$KEYCHAIN_GROUP|$TEAM_ID.$KEYCHAIN_GROUP|g" "$f"
-            done
-            echo "team_id=$TEAM_ID" >> $GITHUB_OUTPUT
-          else
-            echo "ℹ️  TEAM_ID not set, removing Team ID prefix from source files"
-            for f in "${FILES[@]}"; do
-              sed -i '' "s|$DEFAULT_TEAM\.$KEYCHAIN_GROUP|$KEYCHAIN_GROUP|g" "$f"
-            done
-            echo "team_id=" >> $GITHUB_OUTPUT
-          fi
-
-          echo "=== Verification ==="
-          for f in "${FILES[@]}"; do
-            echo "--- $f ---"
-            grep -n "keychain.shared\|KEYCHAIN_GROUP\|sharedAccessGroup" "$f"
-          done
-
       # ========== 版本读取 ==========
       - name: Read version from libs.versions.toml
         id: version
@@ -94,7 +60,6 @@ jobs:
           echo "========================================"
           echo "  Version Name : $VER_NAME"
           echo "  Version Code : $VER_CODE"
-          echo "  TEAM_ID      : ${{ vars.TEAM_ID || '(default R6UB6VD355)' }}"
           echo "========================================"
 
       # ========== 同步版本到 Xcode 配置 ==========
@@ -181,5 +146,5 @@ jobs:
       - name: Upload IPA artifact
         uses: actions/upload-artifact@v4
         with:
-          name: PumpkinToolkit-${{ steps.version.outputs.ver_name }}-ios${{ steps.teamid.outputs.team_id != '' && format('-{0}', steps.teamid.outputs.team_id) || '' }}
+          name: PumpkinToolkit-${{ steps.version.outputs.ver_name }}-ios
           path: build/ipa/PumpkinToolkit.ipa
