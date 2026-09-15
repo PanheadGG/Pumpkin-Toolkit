@@ -39,13 +39,14 @@ fun BoxScope.MiuixFloatingDropdown(
     selectedIndex: Int,
     onSelect: (Int) -> Unit,
     backdrop: LayerBackdrop? = null,
-    containerColor: Color = MiuixTheme.colorScheme.surfaceContainer
+    containerColor: Color = MiuixTheme.colorScheme.surfaceContainer,
+    modifier: Modifier = Modifier
 ) {
     val hapticFeedback = LocalHapticFeedback.current
     var showPopup by remember { mutableStateOf(false) }
 
     Box(
-        modifier = Modifier
+        modifier = modifier
             .align(Alignment.BottomEnd)
             .navigationBarsPadding()
             .padding(end = 16.dp, bottom = 16.dp)

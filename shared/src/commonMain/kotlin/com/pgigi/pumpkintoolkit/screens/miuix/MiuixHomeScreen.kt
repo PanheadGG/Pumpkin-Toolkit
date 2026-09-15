@@ -80,7 +80,7 @@ fun MiuixHomeScreen(viewModel: HomeViewModel = viewModel(factory = HomeViewModel
 
         when {
             // >= 1200dp: three columns equally
-            widthDp >= 1200.dp -> {
+            widthDp >= 1400.dp -> {
                 Row(modifier = Modifier.fillMaxSize()) {
                     Box(modifier = Modifier.weight(1f).fillMaxHeight()) {
                         TodayScreen()
@@ -94,8 +94,8 @@ fun MiuixHomeScreen(viewModel: HomeViewModel = viewModel(factory = HomeViewModel
                 }
             }
 
-            // 600dp..<1200dp: left TodayScreen, right ScheduleScreen, FAB for FunctionScreen
-            widthDp >= 600.dp -> {
+            // 800dp..<1400dp: left TodayScreen, right ScheduleScreen, FAB for FunctionScreen
+            widthDp >= 800.dp -> {
                 var showFunctionPanel by remember { mutableStateOf(false) }
                 // padding values matching the FAB's right and bottom padding
                 val fabPadding = 16.dp

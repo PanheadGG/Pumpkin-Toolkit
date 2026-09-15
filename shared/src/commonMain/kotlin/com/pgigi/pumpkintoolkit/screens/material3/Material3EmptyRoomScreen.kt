@@ -176,7 +176,7 @@ fun Material3EmptyRoomScreen(
                     }
                 },
                 actions = {
-                    if (windowInfo.containerDpSize.width <= 800.dp) {
+                    if (windowInfo.containerDpSize.width < 800.dp) {
                         AnimatedVisibility(
                             visible = showOperations,
                         ) {
@@ -200,7 +200,7 @@ fun Material3EmptyRoomScreen(
             )
         }
     ) { paddingValues ->
-        if (windowInfo.containerDpSize.width > 800.dp) {
+        if (windowInfo.containerDpSize.width >= 800.dp) {
             Row(modifier = Modifier.padding(paddingValues)) {
                 M3EmptyRoomOperations(
                     Modifier.width(400.dp),

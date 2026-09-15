@@ -341,15 +341,19 @@ object QZClient {
             val doc = Ksoup.parse(html)
             val trElements = doc.select("#kbtable tbody tr")
             if (trElements.size <= 2) return null
-            val startTimeStr = trElements[1].select("td")[1].attr("title")
-            val format = LocalDate.Format {
-                year(Padding.ZERO)
-                char('年')
-                monthNumber(Padding.ZERO)
-                char('月')
-                day(Padding.ZERO)
+            for(i in 1..7){
+                val startTimeStr = trElements[1].select("td")[i].attr("title")
+                if (startTimeStr.isBlank()) continue
+                val format = LocalDate.Format {
+                    year(Padding.ZERO)
+                    char('年')
+                    monthNumber(Padding.ZERO)
+                    char('月')
+                    day(Padding.ZERO)
+                }
+                return LocalDate.parse(startTimeStr, format)
             }
-            return LocalDate.parse(startTimeStr, format)
+            return null
         }catch(e: Exception){
             return null
         }
@@ -373,6 +377,23 @@ object QZClient {
         if (html.isNullOrBlank()) return null
         return parseWeekNum(html)
 
+    }
+
+    fun parseScheduleComment(html: String): String{
+        try{
+            val doc = Ksoup.parse(html)
+            val trElements = doc.select("#kbtable tbody tr")
+            if (trElements.size <= 2) return ""
+            return trElements[1].select("td")[8].text()
+        }catch(e: Exception){
+            return ""
+        }
+    }
+
+    suspend fun getScheduleComment(termId: String): String{
+        val html = getScheduleHtml(termId)
+        if (html.isNullOrBlank()) return ""
+        return parseScheduleComment(html)
     }
 
     fun parseTerms(html: String): Map<String, String>? {

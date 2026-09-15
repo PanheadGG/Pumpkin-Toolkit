@@ -1,25 +1,21 @@
 package com.pgigi.pumpkintoolkit.screens.material3
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -33,10 +29,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.pgigi.pumpkintoolkit.AppConfig
 import com.pgigi.pumpkintoolkit.LocalNavigator
+import com.pgigi.pumpkintoolkit.components.material3.M3FloatingDropdown
 import com.pgigi.pumpkintoolkit.components.material3.SchedulePager
 import com.pgigi.pumpkintoolkit.models.Course
 import com.pgigi.pumpkintoolkit.utils.QZClient
@@ -45,6 +43,7 @@ import com.pgigi.pumpkintoolkit.viewmodel.OtherScheduleViewModel
 import kotlinx.datetime.LocalDate
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.Back
+import top.yukonga.miuix.kmp.icon.extended.GridView
 import top.yukonga.miuix.kmp.icon.extended.ListView
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -59,8 +58,9 @@ fun Material3OtherScheduleScreen(
     var pageCount by remember { mutableIntStateOf(0) }
     val list = remember { mutableStateListOf<Course>() }
     var startDate by remember { mutableStateOf<LocalDate?>(null) }
-    var showTermPicker by remember { mutableStateOf(false) }
     val hapticFeedback = LocalHapticFeedback.current
+    var scheduleComment by remember { mutableStateOf("") }
+    var showComment by remember { mutableStateOf(false) }
 
     LaunchedEffect(viewModel.currentTermIndex) {
         loading = true
@@ -84,6 +84,7 @@ fun Material3OtherScheduleScreen(
                 viewModel.startDateMap[termId] = tmpStartDate
             }
         }
+        scheduleComment = QZClient.getScheduleComment(termId)
         startDate = viewModel.startDateMap[termId]
         loading = false
     }
@@ -105,94 +106,169 @@ fun Material3OtherScheduleScreen(
         title = "第${pagerState.currentPage + 1}周"
     }
 
-    Scaffold(
-        contentWindowInsets = WindowInsets(0, 0, 0, 0),
-        topBar = {
-            TopAppBar(
-                title = { Text(title) },
-                navigationIcon = {
-                    IconButton(onClick = {
-                        hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                        navigator.pop()
-                    }) {
-                        Icon(MiuixIcons.Back, contentDescription = "返回")
-                    }
-                },
-                actions = {
-                    if (AppConfig.termNameList.isNotEmpty()) {
-                        IconButton(onClick = {
-                            hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                            showTermPicker = true
-                        }) {
-                            Icon(MiuixIcons.ListView, contentDescription = "学期列表")
-                        }
-                    }
-                }
-            )
-        }
-    ) { paddingValues ->
-        SchedulePager(
-            modifier = Modifier.padding(paddingValues),
-            cellHeight = AppConfig.cellHeight.dp,
-            courseListByWeek = courseListByWeek,
-            pagerState = pagerState,
-            timeList = AppConfig.timeList,
-            startDate = startDate
-        )
-        if (loading) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.3f)),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator()
-            }
-        }
+    val shortLabels = remember(AppConfig.termNameList) {
+        AppConfig.termNameList.map { it }
     }
 
-    if (showTermPicker) {
-        AlertDialog(
-            onDismissRequest = { showTermPicker = false },
-            title = { Text("选择学期") },
-            text = {
-                Column {
-                    AppConfig.termNameList.forEachIndexed { index, name ->
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    if (index != viewModel.currentTermIndex) {
-                                        viewModel.currentTermIndex = index
-                                        title = "课程表"
-                                        showTermPicker = false
+    val currentLabel = shortLabels.getOrElse(viewModel.currentTermIndex) { "选择学期" }
+    val windowInfo = LocalWindowInfo.current
+
+    Scaffold(
+        modifier = Modifier,
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
+        bottomBar = {
+            if (windowInfo.containerDpSize.width < 800.dp) {
+                NavigationBar {
+                    NavigationBarItem(
+                        selected = !showComment,
+                        onClick = { showComment = false },
+                        icon = { Icon(MiuixIcons.ListView, contentDescription = "课表") },
+                        label = { Text("课表") }
+                    )
+                    NavigationBarItem(
+                        selected = showComment,
+                        onClick = { showComment = true },
+                        icon = { Icon(MiuixIcons.GridView, contentDescription = "备注") },
+                        label = { Text("备注") }
+                    )
+                }
+            }
+        }
+    ) { outerPaddingValues ->
+        Box(modifier = Modifier.fillMaxSize().padding(outerPaddingValues)) {
+            if (windowInfo.containerDpSize.width >= 800.dp) {
+                Row(modifier = Modifier.fillMaxSize()) {
+                    // SchedulePager with its own Scaffold
+                    Scaffold(
+                        modifier = Modifier.fillMaxSize().weight(1f),
+                        contentWindowInsets = WindowInsets(0, 0, 0, 0),
+                        topBar = {
+                            TopAppBar(
+                                title = { Text(title) },
+                                navigationIcon = {
+                                    IconButton(onClick = {
+                                        hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                        navigator.pop()
+                                    }) {
+                                        Icon(MiuixIcons.Back, contentDescription = "返回")
                                     }
                                 }
-                                .padding(vertical = 12.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = name,
-                                color = if (index == viewModel.currentTermIndex)
-                                    MaterialTheme.colorScheme.primary
-                                else MaterialTheme.colorScheme.onSurface
                             )
-                            if (index == viewModel.currentTermIndex) {
-                                Text(
-                                    text = "\u2713",
-                                    color = MaterialTheme.colorScheme.primary,
-                                    style = MaterialTheme.typography.titleMedium
-                                )
-                            }
-                        }
+                        },
+                    ) { innerPaddingValues ->
+                        SchedulePager(
+                            modifier = Modifier.fillMaxSize().padding(innerPaddingValues),
+                            cellHeight = AppConfig.cellHeight.dp,
+                            courseListByWeek = courseListByWeek,
+                            pagerState = pagerState,
+                            timeList = AppConfig.timeList,
+                            startDate = startDate
+                        )
+                    }
+
+                    // Text with its own Scaffold
+                    Scaffold(
+                        modifier = Modifier.fillMaxSize().weight(1f),
+                        contentWindowInsets = WindowInsets(0, 0, 0, 0),
+                        topBar = {
+                            TopAppBar(
+                                title = { Text("备注") },
+                            )
+                        },
+                    ) { innerPaddingValues ->
+                        Text(
+                            modifier = Modifier.padding(innerPaddingValues).padding(horizontal = 16.dp).fillMaxSize(),
+                            text = scheduleComment
+                        )
                     }
                 }
-            },
-            confirmButton = {},
-            dismissButton = {
-                TextButton(onClick = { showTermPicker = false }) { Text("关闭") }
+                if (loading) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.3f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator()
+                    }
+                }
+            } else {
+                if (!showComment) {
+                    // SchedulePager view
+                    Scaffold(
+                        modifier = Modifier.fillMaxSize(),
+                        topBar = {
+                            TopAppBar(
+                                title = { Text(title) },
+                                navigationIcon = {
+                                    IconButton(onClick = {
+                                        hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                        navigator.pop()
+                                    }) {
+                                        Icon(MiuixIcons.Back, contentDescription = "返回")
+                                    }
+                                }
+                            )
+                        }
+                    ) { innerPaddingValues ->
+                        SchedulePager(
+                            modifier = Modifier.padding(innerPaddingValues),
+                            cellHeight = AppConfig.cellHeight.dp,
+                            courseListByWeek = courseListByWeek,
+                            pagerState = pagerState,
+                            timeList = AppConfig.timeList,
+                            startDate = startDate
+                        )
+                    }
+                } else {
+                    Scaffold(
+                        modifier = Modifier.fillMaxSize(),
+                        topBar = {
+                            TopAppBar(
+                                title = { Text("备注") },
+                                navigationIcon = {
+                                    IconButton(onClick = {
+                                        hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                        navigator.pop()
+                                    }) {
+                                        Icon(MiuixIcons.Back, contentDescription = "返回")
+                                    }
+                                }
+                            )
+                        }
+                    ) { innerPaddingValues ->
+                        Text(
+                            modifier = Modifier.padding(innerPaddingValues).padding(horizontal = 16.dp),
+                            text = scheduleComment
+                        )
+                    }
+                }
+
+                if (loading) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.3f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator()
+                    }
+                }
             }
-        )
+
+            if (shortLabels.isNotEmpty()) {
+                M3FloatingDropdown(
+                    label = currentLabel,
+                    items = shortLabels,
+                    selectedIndex = viewModel.currentTermIndex,
+                    onSelect = { index ->
+                        if (index != viewModel.currentTermIndex) {
+                            viewModel.currentTermIndex = index
+                            title = "第${pagerState.currentPage + 1}周"
+                        }
+                    },
+                )
+            }
+        }
     }
 }
