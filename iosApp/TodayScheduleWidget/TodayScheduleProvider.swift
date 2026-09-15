@@ -50,7 +50,9 @@ struct TodayScheduleProvider: TimelineProvider {
 
         var entries: [ScheduleEntry] = []
         var currentDate = now
-        let maxEntries = 20
+        // 利用完整学期数据，为每个课程时间点生成 entry
+        // 最多生成 50 个 entry，覆盖大约一周的关键时间节点
+        let maxEntries = 50
         var count = 0
 
         while count < maxEntries {
@@ -60,6 +62,7 @@ struct TodayScheduleProvider: TimelineProvider {
             let remaining = entry.todayCourses
             var nextDate: Date? = nil
 
+            // 找到下一个课程结束时间作为下一个刷新点
             for course in remaining {
                 if let endTime = WidgetHelper.timeToDate(course.endTime, baseDate: currentDate) {
                     if endTime > currentDate {
@@ -70,7 +73,9 @@ struct TodayScheduleProvider: TimelineProvider {
                 }
             }
 
+            // 如果今天没有更多课程了，跳到明天第一节课开始时间
             if nextDate == nil {
+                // 跳到明天的 00:00
                 if let midnight = calendar.date(bySettingHour: 0, minute: 0, second: 0,
                                                  of: calendar.date(byAdding: .day, value: 1, to: currentDate) ?? currentDate) {
                     nextDate = midnight
@@ -87,6 +92,8 @@ struct TodayScheduleProvider: TimelineProvider {
             entries.append(entry)
         }
 
+        // 如果有全学期数据，可以设置更长的刷新间隔
+        // 即使 1 小时后刷新，Keychain 数据不会过期，小组件始终有数据可用
         let nextReload = now.addingTimeInterval(3600)
         completion(Timeline(entries: entries, policy: .after(nextReload)))
     }
