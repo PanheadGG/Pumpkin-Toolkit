@@ -1,6 +1,7 @@
 package com.pgigi.pumpkintoolkit.utils
 
 import com.pgigi.pumpkintoolkit.models.Course
+import com.pgigi.pumpkintoolkit.models.ScheduleCourseEntry
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
@@ -24,6 +25,24 @@ fun buildWeekCourses(courses: List<Course>): List<List<Course>> {
     return courseListByWeek
 }
 
+//预处理融合课表
+//通过此方法处理的总课表会包含教务课程和自定义课程；教务课程id为empty，自定义课程的id会得以保留
+fun buildWeekScheduleEntries(entries: List<ScheduleCourseEntry>): List<List<ScheduleCourseEntry>> {
+    val entriesListByWeek = mutableListOf(mutableListOf<ScheduleCourseEntry>())
+    entries.forEach { entry ->
+        entry.course.weeks.forEach { week ->
+            if (week[1] > entriesListByWeek.size) {
+                for (i in entriesListByWeek.size..< week[1]) {
+                    entriesListByWeek.add(mutableListOf())
+                }
+            }
+            for (i in week[0]-1..< week[1]) {
+                entriesListByWeek[i].add(entry) //id与课程强绑定。通过week加进来后，id也会自己进来
+            }
+        }
+    }
+    return entriesListByWeek
+}
 
 fun <T> List<T>.contentEqualsIgnoreOrder(other: List<T>): Boolean {
     // 第一步：长度不同直接返回 false

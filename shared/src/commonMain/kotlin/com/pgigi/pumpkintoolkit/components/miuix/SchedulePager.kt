@@ -11,6 +11,7 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -28,7 +29,9 @@ import com.pgigi.pumpkintoolkit.components.ConflictSheet
 import com.pgigi.pumpkintoolkit.components.CourseDetailSheet
 import com.pgigi.pumpkintoolkit.components.CourseRow
 import com.pgigi.pumpkintoolkit.components.mergeCoursesForDisplay
+import com.pgigi.pumpkintoolkit.components.mergeScheduleEntriesForDisplay
 import com.pgigi.pumpkintoolkit.models.Course
+import com.pgigi.pumpkintoolkit.models.ScheduleCourseEntry
 import com.pgigi.pumpkintoolkit.models.ScheduleTime
 import com.pgigi.pumpkintoolkit.utils.WeekCalculator
 import kotlinx.datetime.DateTimeUnit
@@ -40,6 +43,7 @@ import kotlinx.datetime.toLocalDateTime
 import top.yukonga.miuix.kmp.basic.BasicComponent
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.Text
+import top.yukonga.miuix.kmp.basic.TextButton
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.Contacts
 import top.yukonga.miuix.kmp.icon.extended.Info
@@ -47,6 +51,7 @@ import top.yukonga.miuix.kmp.icon.extended.Location
 import top.yukonga.miuix.kmp.icon.extended.Months
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.window.WindowBottomSheet
+import top.yukonga.miuix.kmp.window.WindowDialog
 import kotlin.time.Clock
 
 @Composable
@@ -84,16 +89,26 @@ fun TimeColumn(timeList: List<ScheduleTime>, cellHeight: Dp = 70.dp) {
 @Composable
 fun ScheduleTable(
     courses: List<Course>,
+    entries: List<ScheduleCourseEntry> = emptyList(),
     timeList: List<ScheduleTime>,
     modifier: Modifier = Modifier,
     cellHeight: Dp = 70.dp,
-    firstDay: LocalDate? = null
+    firstDay: LocalDate? = null,
+    onAddCell: (Int, Int) -> Unit = { _, _ -> } //回调函数，通过层层上报拿到完整的卡片信息
 ) {
     var dayList by remember { mutableStateOf(listOf("日", "一", "二", "三", "四", "五", "六")) }
 
     val dayCourses by produceState(initialValue = Array(7) { emptyList() }, courses) {
         value = Array(7) { day ->
             mergeCoursesForDisplay(courses.filter { it.dayOfWeek == day })
+        }
+    }
+
+    val dayEntries = remember(entries) {    //将entries处理成周课表形式，arr[7]，一个下标一天，持有一个列表
+        Array(7) { day ->
+            mergeScheduleEntriesForDisplay(
+                entries.filter { it.course.dayOfWeek == day }
+            )
         }
     }
 
@@ -165,11 +180,16 @@ fun ScheduleTable(
         ) {
             TimeColumn(timeList, cellHeight)
 
-            dayCourses.forEach { dayCourseList ->
+//            dayCourses.forEach { dayCourseList ->
+            dayCourses.forEachIndexed { dayIndex, dayCourseList ->
                 CourseRow(
                     dayCourses = dayCourseList,
                     cellHeight = cellHeight,
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
+                    onEmptyCellClick = {lesson ->   //点击滚木卡片的时候，把星期和节次一起传给上层
+                        onAddCell(dayIndex, lesson)
+                    },
+                    dayEntries = dayEntries[dayIndex]
                 )
             }
         }
@@ -180,11 +200,18 @@ fun ScheduleTable(
 fun SchedulePager(
     modifier: Modifier = Modifier,
     courseListByWeek: List<List<Course>>,
+    entriesListByWeek: List<List<ScheduleCourseEntry>> = emptyList(),   //打了个包的数据结构
     timeList: List<ScheduleTime>,
     cellHeight: Dp = 70.dp,
     pagerState: PagerState,
-    startDate: LocalDate? = null
+    startDate: LocalDate? = null,
+    onAddCell: (Int, Int, Int) -> Unit = {_, _, _ -> },  //(星期， 节次， 周次）
+    onEditCustomCourse:(String) -> Unit = {},   //保存id，通过回调实现id对应课程的修改
+    onDeleteCustomCourse: (String) -> Boolean = { false }   //String为id，bool为是否删除成功
 ) {
+    var courseIdToConfirmDeletion by remember { mutableStateOf<String?>(null) } //记录等待确认删除的课程id， null代表没有删除请求，故null时不显示确认删除弹窗，有就显示
+    var deleteFail by remember { mutableStateOf(false) }    //标记是否删除成功
+
     HorizontalPager(
         state = pagerState,
         modifier = modifier,
@@ -193,15 +220,23 @@ fun SchedulePager(
             val weekCalculator = WeekCalculator(startDate)
             ScheduleTable(
                 courses = courseListByWeek.getOrElse(page) { listOf() },
+                entries = entriesListByWeek.getOrElse(page) { emptyList() },
                 timeList = timeList,
                 cellHeight = cellHeight,
-                firstDay = weekCalculator.getWeekFirstDay(page + 1)
+                firstDay = weekCalculator.getWeekFirstDay(page + 1),
+                onAddCell = { day, lesson ->
+                    onAddCell(day, lesson, page + 1)
+                }
             )
         } else {
             ScheduleTable(
                 courses = courseListByWeek.getOrElse(page) { listOf() },
+                entries = entriesListByWeek.getOrElse(page) { emptyList() },
                 timeList = timeList,
-                cellHeight = cellHeight
+                cellHeight = cellHeight,
+                onAddCell = { day, lesson ->
+                    onAddCell(day, lesson, page + 1)
+                }
             )
         }
     }
@@ -251,7 +286,59 @@ fun SchedulePager(
                 )
             }
         )
+
+
+        CourseDetailSheet.selectedCustomCourseIds.value.singleOrNull()?.let { id ->
+            BasicComponent (    //修改课程按钮绘制
+                title = "修改课程",
+                onClick = {
+
+                    onEditCustomCourse(id)
+                }
+            )
+
+            BasicComponent (    //删除课程按钮的绘制
+                title = "删除课程",
+                onClick = {
+                    deleteFail = false  //重置flag
+                    courseIdToConfirmDeletion = id
+                }
+            )
+        }
+
         BasicComponent()
+    }
+
+    //确认删除弹窗，courseIdToConfirm置null时关闭，有元素就开启
+    WindowDialog(
+        show = courseIdToConfirmDeletion != null,
+        title = "确认删除",
+        summary = if (deleteFail) "删除失败！请重试！" else "确定删除这门课程吗？\n这门课将会永久丢失！\t（真的很久！）",
+        onDismissRequest = { courseIdToConfirmDeletion = null }
+    ) {
+        Row {
+            TextButton(
+                text = "取消",
+                onClick = { courseIdToConfirmDeletion = null },
+                modifier = Modifier.weight(1f)
+            )
+
+            TextButton(
+                text = "确认删除",
+                onClick = {
+                    courseIdToConfirmDeletion?.let { id ->
+                        if (onDeleteCustomCourse(id)) { //如果成功删除
+                            deleteFail = false  //reset
+                            courseIdToConfirmDeletion = null
+                            CourseDetailSheet.show.value = false
+                        } else {
+                            deleteFail = true
+                        }
+                    }
+                },
+                modifier = Modifier.weight(1f)
+            )
+        }
     }
 
     WindowBottomSheet(
@@ -259,13 +346,16 @@ fun SchedulePager(
         title = "课程详细 (${ConflictSheet.courses.size}门)",
         onDismissRequest = { ConflictSheet.show.value = false }
     ) {
-        ConflictSheet.courses.forEach { course ->
+        ConflictSheet.courses.forEachIndexed { index, course ->
             BasicComponent(
                 title = course.name,
                 summary = "@${course.classroom} ${course.teacher}",
                 onClick = {
                     ConflictSheet.show.value = false
-                    CourseDetailSheet.show(course)
+                    CourseDetailSheet.show(
+                        course,
+                        ConflictSheet.entries.getOrNull(index)?.customCourseIds ?: emptyList()
+                    )
                 }
             )
         }
